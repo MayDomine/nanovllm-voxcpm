@@ -610,13 +610,21 @@ class VoxCPM2Model(nn.Module):
         temperature: torch.Tensor,
         cfg_value: torch.Tensor,
         z_noise: torch.Tensor | None = None,
+        text_only_prefill: bool = False,
     ):
-        feat_embeds = self.enc_to_lm_proj(self.feat_encoder(feat))
-        feat_embeds = torch.masked_fill(feat_embeds, feat_mask.unsqueeze(-1).logical_not(), 0)
         text_embeds = self.base_lm.embed_tokens(text_tokens)
-        combined_embeds = torch.where(feat_mask.unsqueeze(-1), feat_embeds, text_embeds)
+        if text_only_prefill:
+            # The runner proves the entire mask is false using CPU metadata.
+            # Audio encoding and quantization would both be discarded.
+            feat_embeds = torch.zeros_like(text_embeds)
+            combined_embeds = text_embeds
+        else:
+            feat_embeds = self.enc_to_lm_proj(self.feat_encoder(feat))
+            feat_embeds = torch.masked_fill(feat_embeds, feat_mask.unsqueeze(-1).logical_not(), 0)
+            combined_embeds = torch.where(feat_mask.unsqueeze(-1), feat_embeds, text_embeds)
         enc_outputs = self.base_lm(combined_embeds, positions)
-        enc_outputs = torch.where(feat_mask.unsqueeze(-1), self.fsq_layer(enc_outputs), enc_outputs)
+        if not text_only_prefill:
+            enc_outputs = torch.where(feat_mask.unsqueeze(-1), self.fsq_layer(enc_outputs), enc_outputs)
 
         context = get_context()
         if context.is_prefill:
@@ -684,6 +692,7 @@ class VoxCPM2Model(nn.Module):
         temperature: torch.Tensor,
         cfg_value: torch.Tensor,
         z_noise: torch.Tensor | None = None,
+        text_only_prefill: bool = False,
     ):
         diffusion_inputs, outputs = self.forward_backbone(
             positions=positions,
@@ -693,6 +702,7 @@ class VoxCPM2Model(nn.Module):
             temperature=temperature,
             cfg_value=cfg_value,
             z_noise=z_noise,
+            text_only_prefill=text_only_prefill,
         )
         outputs["latents"] = self.forward_diffusion(**diffusion_inputs)
         return outputs
