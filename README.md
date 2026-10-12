@@ -222,6 +222,8 @@ The benchmark defines `RTF_per_req_mean` as the mean over requests of `((request
 Unless noted, runs use the default `gpu_memory_utilization=0.8`. Two high-concurrency LoRA
 points (short prompt @ 128, long prompt @ 64) are measured at `gpu_memory_utilization=0.7`
 (marked with `†`); at the default `0.8` they can OOM on a 24 GB card. See "Memory note" below.
+LoRA tables are measured with 5 warmup iterations (instead of 1) to absorb first-touch
+LoRA slot population; with a single warmup iteration the first measured iteration is biased high.
 
 Short prompt, no LoRA:
 
@@ -247,22 +249,22 @@ Short prompt, LoRA enabled with 32 runtime slots:
 
 | concurrency | TTFB p50 (s) | TTFB p90 (s) | RTF_per_req_mean |
 |---:|---:|---:|---:|
-| 1 | 0.0936 ± 0.0133 | 0.0936 ± 0.0133 | 0.1172 ± 0.0089 |
-| 8 | 0.2487 ± 0.1250 | 0.2489 ± 0.1250 | 0.1524 ± 0.0072 |
-| 16 | 0.1697 ± 0.0881 | 0.1702 ± 0.0881 | 0.1957 ± 0.0025 |
-| 32 | 0.1885 ± 0.1279 | 0.1901 ± 0.1273 | 0.3234 ± 0.0285 |
-| 64 | 0.2377 ± 0.0445 | 0.2403 ± 0.0458 | 0.5701 ± 0.0272 |
-| 128 † | 0.4172 ± 0.0908 | 0.4256 ± 0.0923 | 1.1243 ± 0.0508 |
+| 1 | 0.0876 ± 0.0006 | 0.0876 ± 0.0006 | 0.1133 ± 0.0012 |
+| 8 | 0.0986 ± 0.0201 | 0.0988 ± 0.0202 | 0.1498 ± 0.0019 |
+| 16 | 0.1006 ± 0.0175 | 0.1010 ± 0.0176 | 0.1966 ± 0.0007 |
+| 32 | 0.1125 ± 0.0048 | 0.1133 ± 0.0049 | 0.3065 ± 0.0014 |
+| 64 | 0.1801 ± 0.0032 | 0.1819 ± 0.0029 | 0.5704 ± 0.0118 |
+| 128 † | 0.3691 ± 0.0578 | 0.3735 ± 0.0591 | 1.2174 ± 0.1505 |
 
 Long prompt, LoRA enabled with 32 runtime slots:
 
 | concurrency | TTFB p50 (s) | TTFB p90 (s) | RTF_per_req_mean |
 |---:|---:|---:|---:|
-| 1 | 0.1702 ± 0.1535 | 0.1702 ± 0.1535 | 0.1327 ± 0.0011 |
-| 8 | 0.2243 ± 0.0768 | 0.2262 ± 0.0760 | 0.1729 ± 0.0023 |
-| 16 | 0.2035 ± 0.0568 | 0.2042 ± 0.0568 | 0.2323 ± 0.0026 |
-| 32 | 0.2552 ± 0.0993 | 0.2590 ± 0.0969 | 0.3695 ± 0.0024 |
-| 64 † | 0.4141 ± 0.0785 | 0.4163 ± 0.0780 | 0.6932 ± 0.0106 |
+| 1 | 0.0930 ± 0.0047 | 0.0930 ± 0.0047 | 0.1307 ± 0.0005 |
+| 8 | 0.1171 ± 0.0352 | 0.1177 ± 0.0348 | 0.1763 ± 0.0039 |
+| 16 | 0.1177 ± 0.0124 | 0.1192 ± 0.0134 | 0.2455 ± 0.0253 |
+| 32 | 0.1869 ± 0.0140 | 0.1876 ± 0.0139 | 0.3625 ± 0.0049 |
+| 64 † | 0.3913 ± 0.0334 | 0.3922 ± 0.0332 | 0.7433 ± 0.0192 |
 
 `†` measured at `gpu_memory_utilization=0.7`.
 
