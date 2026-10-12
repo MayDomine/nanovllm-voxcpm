@@ -7,6 +7,7 @@ from nanovllm_voxcpm.layers.activation import SiluAndMul
 from nanovllm_voxcpm.layers.attention import Attention
 from nanovllm_voxcpm.layers.embed_head import VocabParallelEmbedding
 from nanovllm_voxcpm.layers.layernorm import RMSNorm
+from nanovllm_voxcpm.layers.longrope import apply_longrope
 from nanovllm_voxcpm.layers.linear import MergedColumnParallelLinear, QKVParallelLinear, RowParallelLinear
 from nanovllm_voxcpm.layers.lora import (
     LoRALinear,
@@ -84,6 +85,8 @@ class MiniCPMLongRoPE(nn.Module):
     def forward(
         self, positions: torch.Tensor, query: torch.Tensor, key: torch.Tensor
     ) -> tuple[torch.Tensor, torch.Tensor]:
+        if query.is_cuda and not torch.is_grad_enabled():
+            return apply_longrope(positions, query, key, self.cos_cached, self.sin_cached, self.dim)
         num_tokens = positions.size(0)
         cos = self.cos_cached[positions]
         sin = self.sin_cached[positions]

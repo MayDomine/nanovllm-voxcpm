@@ -5,6 +5,7 @@ from typing import Optional
 from nanovllm_voxcpm.layers.activation import SiluAndMul
 from nanovllm_voxcpm.layers.attention import Attention
 from nanovllm_voxcpm.layers.layernorm import RMSNorm
+from nanovllm_voxcpm.layers.longrope import apply_longrope
 from nanovllm_voxcpm.layers.linear import (
     MergedColumnParallelLinear,
     QKVParallelLinear,
@@ -101,6 +102,8 @@ class MiniCPMLongRoPE(nn.Module):
         query: torch.Tensor,
         key: torch.Tensor,
     ) -> tuple[torch.Tensor, torch.Tensor]:
+        if query.is_cuda and not torch.is_grad_enabled():
+            return apply_longrope(positions, query, key, self.cos_cached, self.sin_cached, self.dim)
         # position: [t]
         # query: [t, h, d]
         # key: [t, h, d]
